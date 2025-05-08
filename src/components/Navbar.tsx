@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,8 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { toast } from "@/components/ui/sonner";
 
 interface NavbarProps {
   userRole?: "shopkeeper" | "customer" | null;
@@ -17,10 +18,21 @@ interface NavbarProps {
 const Navbar = ({ userRole, userName }: NavbarProps) => {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const handleLogout = () => {
-    // Handle logout functionality here (will be implemented with Supabase)
-    navigate("/login");
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      toast.success("Logged out successfully");
+      navigate("/login");
+    } catch (error) {
+      console.error("Error logging out:", error);
+      toast.error("Failed to log out");
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   return (
@@ -58,8 +70,8 @@ const Navbar = ({ userRole, userName }: NavbarProps) => {
           {userRole ? (
             <>
               <span className="text-sm mr-2">Hi, {userName}</span>
-              <Button variant="outline" onClick={handleLogout}>
-                Logout
+              <Button variant="outline" onClick={handleLogout} disabled={isLoggingOut}>
+                {isLoggingOut ? "Logging out..." : "Logout"}
               </Button>
             </>
           ) : (
@@ -118,8 +130,13 @@ const Navbar = ({ userRole, userName }: NavbarProps) => {
                 {userRole ? (
                   <>
                     <p className="text-sm mb-2">Hi, {userName}</p>
-                    <Button variant="outline" onClick={handleLogout} className="w-full">
-                      Logout
+                    <Button 
+                      variant="outline" 
+                      onClick={handleLogout} 
+                      className="w-full"
+                      disabled={isLoggingOut}
+                    >
+                      {isLoggingOut ? "Logging out..." : "Logout"}
                     </Button>
                   </>
                 ) : (

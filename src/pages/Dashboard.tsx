@@ -5,6 +5,8 @@ import Navbar from "@/components/Navbar";
 import ShopkeeperDashboard from "@/components/ShopkeeperDashboard";
 import CustomerDashboard from "@/components/CustomerDashboard";
 import { User } from "@/types";
+import { supabase, checkAuthStatus } from "@/lib/supabase";
+import { toast } from "@/components/ui/sonner";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -12,37 +14,52 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Try to get user from localStorage
-    const storedUser = localStorage.getItem('user');
-    
-    if (storedUser) {
+    const fetchUserData = async () => {
       try {
-        const parsedUser = JSON.parse(storedUser);
-        // Ensure createdAt is a Date object
-        parsedUser.createdAt = new Date(parsedUser.createdAt);
-        setUser(parsedUser);
+        // Check if user is authenticated with Supabase
+        const session = await checkAuthStatus();
+        
+        if (!session) {
+          navigate("/login");
+          return;
+        }
+
+        // Get user profile data from Supabase
+        const { data: profileData, error: profileError } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", session.user.id)
+          .single();
+
+        if (profileError || !profileData) {
+          console.error("Error fetching profile:", profileError);
+          toast.error("Failed to load user profile");
+          navigate("/login");
+          return;
+        }
+
+        // Convert Supabase data to our User type
+        const userData: User = {
+          id: profileData.id,
+          name: profileData.name,
+          role: profileData.role,
+          shopId: profileData.shop_id || undefined,
+          customerId: profileData.customer_id || undefined,
+          phone: profileData.phone || undefined,
+          email: profileData.email || undefined,
+          createdAt: new Date(profileData.created_at),
+        };
+
+        setUser(userData);
         setIsLoading(false);
       } catch (error) {
-        console.error('Failed to parse stored user:', error);
+        console.error("Error in authentication:", error);
+        toast.error("Authentication error");
         navigate("/login");
       }
-    } else {
-      // If no user found in localStorage, use fallback mock user for development
-      // In production, this would redirect to login
-      const mockUser: User = {
-        id: "1",
-        name: "Vikram Sharma",
-        role: "shopkeeper",
-        shopId: "1",
-        createdAt: new Date(),
-      };
+    };
 
-      // Simulate API call delay
-      setTimeout(() => {
-        setUser(mockUser);
-        setIsLoading(false);
-      }, 1000);
-    }
+    fetchUserData();
   }, [navigate]);
 
   if (isLoading) {

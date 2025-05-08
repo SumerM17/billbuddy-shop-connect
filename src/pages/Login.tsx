@@ -17,7 +17,8 @@ import {
 } from "@/components/ui/form";
 import { toast } from "@/components/ui/sonner";
 import Navbar from "@/components/Navbar";
-import { Customer, User } from "@/types";
+import { supabase } from "@/lib/supabase";
+import { v4 as uuidv4 } from 'uuid';
 
 const customerLoginSchema = z.object({
   uniqueId: z.string().min(1, "Customer ID is required"),
@@ -45,6 +46,7 @@ const shopkeeperSignupSchema = z.object({
 const Login = () => {
   const [activeTab, setActiveTab] = useState("customer");
   const [shopkeeperView, setShopkeeperView] = useState<"login" | "signup">("login");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const customerForm = useForm<z.infer<typeof customerLoginSchema>>({
@@ -76,108 +78,178 @@ const Login = () => {
     },
   });
 
-  const onCustomerSubmit = (values: z.infer<typeof customerLoginSchema>) => {
-    // In a real app, this would query the database for the customer
-    console.log("Customer login:", values);
-    
-    // Simulate checking if customer exists in database
-    const mockCustomers: Customer[] = [
-      { 
-        id: "c1", 
-        name: "John Doe", 
-        uniqueId: "CUST123", 
-        shopId: "1", 
-        createdAt: new Date() 
+  const onCustomerSubmit = async (values: z.infer<typeof customerLoginSchema>) => {
+    setIsLoading(true);
+    try {
+      // Find customer in database by unique ID
+      const { data: customer, error: customerError } = await supabase
+        .from("customers")
+        .select("*")
+        .eq("unique_id", values.uniqueId)
+        .single();
+      
+      if (customerError || !customer) {
+        toast.error("Invalid customer ID. Please check and try again.");
+        setIsLoading(false);
+        return;
       }
-    ];
-    
-    const customer = mockCustomers.find(c => c.uniqueId === values.uniqueId);
-    
-    if (customer) {
-      // Create a user session for the customer
-      const customerUser: User = {
-        id: customer.id,
-        name: customer.name,
-        role: "customer",
-        customerId: customer.id,
-        shopId: customer.shopId,
-        createdAt: customer.createdAt,
-      };
       
-      // In a real app, this would set the user in localStorage or a state management system
-      localStorage.setItem('user', JSON.stringify(customerUser));
+      // Create anonymous customer session
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: `${customer.unique_id}@customer.billbuddy.app`, // Using a pattern for customer logins
+        password: customer.unique_id // For simplicity - in production, use more secure methods
+      });
       
+      if (error) {
+        // If customer doesn't have an account yet, create one
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: `${customer.unique_id}@customer.billbuddy.app`,
+          password: customer.unique_id,
+        });
+        
+        if (signUpError) {
+          toast.error("Failed to authenticate. Please try again.");
+          console.error("Customer auth error:", signUpError);
+          setIsLoading(false);
+          return;
+        }
+
+        // Create profile for the customer
+        if (signUpData && signUpData.user) {
+          await supabase.from("profiles").insert({
+            id: signUpData.user.id,
+            name: customer.name,
+            role: "customer",
+            customer_id: customer.id,
+            shop_id: customer.shop_id,
+            created_at: new Date().toISOString(),
+          });
+        }
+      }
+
       toast.success(`Welcome back, ${customer.name}!`);
+      setIsLoading(false);
       navigate("/dashboard");
-    } else {
-      toast.error("Invalid customer ID. Please check and try again.");
+    } catch (error) {
+      console.error("Customer login error:", error);
+      toast.error("An error occurred. Please try again.");
+      setIsLoading(false);
     }
   };
 
-  const onShopkeeperLoginSubmit = (values: z.infer<typeof shopkeeperLoginSchema>) => {
-    // In a real app, this would authenticate the shopkeeper against the database
-    console.log("Shopkeeper login:", values);
-    
-    // Simulate checking if shopkeeper exists in database
-    // For demo purposes, let's accept any email that ends with @shop.com
-    if (values.email.endsWith('@shop.com')) {
-      // Create a mock shopkeeper user
-      const shopkeeperUser: User = {
-        id: "s1",
-        name: "Shopkeeper Account",
-        role: "shopkeeper",
-        shopId: "1",
+  const onShopkeeperLoginSubmit = async (values: z.infer<typeof shopkeeperLoginSchema>) => {
+    setIsLoading(true);
+    try {
+      // Authenticate shopkeeper with Supabase
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: values.email,
-        createdAt: new Date(),
-      };
-      
-      // In a real app, this would set the user in localStorage or a state management system
-      localStorage.setItem('user', JSON.stringify(shopkeeperUser));
-      
+        password: values.password,
+      });
+
+      if (error) {
+        toast.error("Invalid email or password. Please try again.");
+        console.error("Login error:", error);
+        setIsLoading(false);
+        return;
+      }
+
+      // Check if user has a profile and is a shopkeeper
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", data.user.id)
+        .single();
+
+      if (profileError || !profile) {
+        toast.error("Profile not found. Please contact support.");
+        setIsLoading(false);
+        return;
+      }
+
+      if (profile.role !== "shopkeeper") {
+        toast.error("This account is not registered as a shopkeeper.");
+        await supabase.auth.signOut();
+        setIsLoading(false);
+        return;
+      }
+
       toast.success("Logged in successfully!");
+      setIsLoading(false);
       navigate("/dashboard");
-    } else {
-      toast.error("Invalid email or password. Please try again.");
+    } catch (error) {
+      console.error("Shopkeeper login error:", error);
+      toast.error("An error occurred. Please try again.");
+      setIsLoading(false);
     }
   };
 
-  const onShopkeeperSignupSubmit = (values: z.infer<typeof shopkeeperSignupSchema>) => {
-    // In a real app, this would create a new shop and shopkeeper in the database
-    console.log("Shopkeeper signup:", values);
-    
-    // Create mock shop and user objects
-    const newShopId = `shop_${Date.now()}`;
-    const newUserId = `user_${Date.now()}`;
-    
-    const newShop = {
-      id: newShopId,
-      name: values.shopName,
-      ownerId: newUserId,
-      address: values.address,
-      upiId: values.upiId,
-      phone: values.phone,
-      createdAt: new Date()
-    };
-    
-    const newShopkeeper: User = {
-      id: newUserId,
-      name: values.name,
-      role: "shopkeeper",
-      shopId: newShopId,
-      email: values.email,
-      phone: values.phone,
-      createdAt: new Date()
-    };
-    
-    // In a real app, this would store the data in the database
-    console.log("Creating new shop:", newShop);
-    console.log("Creating new shopkeeper:", newShopkeeper);
-    
-    // Store user in localStorage for session management
-    localStorage.setItem('user', JSON.stringify(newShopkeeper));
-    
-    toast.success("Shop registered successfully!");
-    navigate("/dashboard");
+  const onShopkeeperSignupSubmit = async (values: z.infer<typeof shopkeeperSignupSchema>) => {
+    setIsLoading(true);
+    try {
+      // Register shopkeeper with Supabase
+      const { data, error } = await supabase.auth.signUp({
+        email: values.email,
+        password: values.password,
+      });
+
+      if (error) {
+        toast.error("Registration failed: " + error.message);
+        console.error("Signup error:", error);
+        setIsLoading(false);
+        return;
+      }
+
+      if (!data.user) {
+        toast.error("Registration failed. Please try again.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Create a new shop
+      const shopId = uuidv4();
+      const { error: shopError } = await supabase.from("shops").insert({
+        id: shopId,
+        name: values.shopName,
+        owner_id: data.user.id,
+        address: values.address || null,
+        upi_id: values.upiId || null,
+        phone: values.phone || null,
+        created_at: new Date().toISOString(),
+      });
+
+      if (shopError) {
+        console.error("Shop creation error:", shopError);
+        toast.error("Failed to create shop. Please try again.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Create a profile for the shopkeeper
+      const { error: profileError } = await supabase.from("profiles").insert({
+        id: data.user.id,
+        name: values.name,
+        role: "shopkeeper",
+        shop_id: shopId,
+        email: values.email,
+        phone: values.phone || null,
+        created_at: new Date().toISOString(),
+      });
+
+      if (profileError) {
+        console.error("Profile creation error:", profileError);
+        toast.error("Failed to create profile. Please try again.");
+        setIsLoading(false);
+        return;
+      }
+
+      toast.success("Shop registered successfully!");
+      setIsLoading(false);
+      navigate("/dashboard");
+    } catch (error) {
+      console.error("Shopkeeper signup error:", error);
+      toast.error("An error occurred. Please try again.");
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -216,8 +288,8 @@ const Login = () => {
                           </FormItem>
                         )}
                       />
-                      <Button type="submit" className="w-full">
-                        Login
+                      <Button type="submit" className="w-full" disabled={isLoading}>
+                        {isLoading ? "Logging in..." : "Login"}
                       </Button>
                     </form>
                   </Form>
@@ -268,8 +340,8 @@ const Login = () => {
                             </FormItem>
                           )}
                         />
-                        <Button type="submit" className="w-full">
-                          Login
+                        <Button type="submit" className="w-full" disabled={isLoading}>
+                          {isLoading ? "Logging in..." : "Login"}
                         </Button>
                       </form>
                     </Form>
@@ -402,8 +474,8 @@ const Login = () => {
                             </FormItem>
                           )}
                         />
-                        <Button type="submit" className="w-full">
-                          Register Shop
+                        <Button type="submit" className="w-full" disabled={isLoading}>
+                          {isLoading ? "Registering..." : "Register Shop"}
                         </Button>
                       </form>
                     </Form>
@@ -413,6 +485,7 @@ const Login = () => {
                       variant="link" 
                       className="w-full"
                       onClick={() => setShopkeeperView("login")}
+                      disabled={isLoading}
                     >
                       Already have an account? Login
                     </Button>
