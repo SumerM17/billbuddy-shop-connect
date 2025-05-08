@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -11,22 +12,38 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // In a real app, this would fetch the user data from Supabase
-    // For now, we'll mock a logged-in user (shopkeeper)
-    const mockUser: User = {
-      id: "1",
-      name: "Vikram Sharma",
-      role: "shopkeeper",
-      shopId: "1",
-      createdAt: new Date(),
-    };
+    // Try to get user from localStorage
+    const storedUser = localStorage.getItem('user');
+    
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        // Ensure createdAt is a Date object
+        parsedUser.createdAt = new Date(parsedUser.createdAt);
+        setUser(parsedUser);
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Failed to parse stored user:', error);
+        navigate("/login");
+      }
+    } else {
+      // If no user found in localStorage, use fallback mock user for development
+      // In production, this would redirect to login
+      const mockUser: User = {
+        id: "1",
+        name: "Vikram Sharma",
+        role: "shopkeeper",
+        shopId: "1",
+        createdAt: new Date(),
+      };
 
-    // Simulate API call delay
-    setTimeout(() => {
-      setUser(mockUser);
-      setIsLoading(false);
-    }, 1000);
-  }, []);
+      // Simulate API call delay
+      setTimeout(() => {
+        setUser(mockUser);
+        setIsLoading(false);
+      }, 1000);
+    }
+  }, [navigate]);
 
   if (isLoading) {
     return (

@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/form";
 import { toast } from "@/components/ui/sonner";
 import Navbar from "@/components/Navbar";
+import { Customer, User } from "@/types";
 
 const customerLoginSchema = z.object({
   uniqueId: z.string().min(1, "Customer ID is required"),
@@ -31,6 +32,9 @@ const shopkeeperSignupSchema = z.object({
   shopName: z.string().min(1, "Shop name is required"),
   name: z.string().min(1, "Your name is required"),
   email: z.string().email("Please enter a valid email"),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  upiId: z.string().optional(),
   password: z.string().min(6, "Password must be at least 6 characters"),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -64,30 +68,113 @@ const Login = () => {
       shopName: "",
       name: "",
       email: "",
+      phone: "",
+      address: "",
+      upiId: "",
       password: "",
       confirmPassword: "",
     },
   });
 
   const onCustomerSubmit = (values: z.infer<typeof customerLoginSchema>) => {
-    // Here we'll implement customer login logic (will be implemented with Supabase)
+    // In a real app, this would query the database for the customer
     console.log("Customer login:", values);
     
-    toast.success("Logged in as customer!");
-    navigate("/dashboard");
+    // Simulate checking if customer exists in database
+    const mockCustomers: Customer[] = [
+      { 
+        id: "c1", 
+        name: "John Doe", 
+        uniqueId: "CUST123", 
+        shopId: "1", 
+        createdAt: new Date() 
+      }
+    ];
+    
+    const customer = mockCustomers.find(c => c.uniqueId === values.uniqueId);
+    
+    if (customer) {
+      // Create a user session for the customer
+      const customerUser: User = {
+        id: customer.id,
+        name: customer.name,
+        role: "customer",
+        customerId: customer.id,
+        shopId: customer.shopId,
+        createdAt: customer.createdAt,
+      };
+      
+      // In a real app, this would set the user in localStorage or a state management system
+      localStorage.setItem('user', JSON.stringify(customerUser));
+      
+      toast.success(`Welcome back, ${customer.name}!`);
+      navigate("/dashboard");
+    } else {
+      toast.error("Invalid customer ID. Please check and try again.");
+    }
   };
 
   const onShopkeeperLoginSubmit = (values: z.infer<typeof shopkeeperLoginSchema>) => {
-    // Here we'll implement shopkeeper login logic (will be implemented with Supabase)
+    // In a real app, this would authenticate the shopkeeper against the database
     console.log("Shopkeeper login:", values);
     
-    toast.success("Logged in as shopkeeper!");
-    navigate("/dashboard");
+    // Simulate checking if shopkeeper exists in database
+    // For demo purposes, let's accept any email that ends with @shop.com
+    if (values.email.endsWith('@shop.com')) {
+      // Create a mock shopkeeper user
+      const shopkeeperUser: User = {
+        id: "s1",
+        name: "Shopkeeper Account",
+        role: "shopkeeper",
+        shopId: "1",
+        email: values.email,
+        createdAt: new Date(),
+      };
+      
+      // In a real app, this would set the user in localStorage or a state management system
+      localStorage.setItem('user', JSON.stringify(shopkeeperUser));
+      
+      toast.success("Logged in successfully!");
+      navigate("/dashboard");
+    } else {
+      toast.error("Invalid email or password. Please try again.");
+    }
   };
 
   const onShopkeeperSignupSubmit = (values: z.infer<typeof shopkeeperSignupSchema>) => {
-    // Here we'll implement shopkeeper signup logic (will be implemented with Supabase)
+    // In a real app, this would create a new shop and shopkeeper in the database
     console.log("Shopkeeper signup:", values);
+    
+    // Create mock shop and user objects
+    const newShopId = `shop_${Date.now()}`;
+    const newUserId = `user_${Date.now()}`;
+    
+    const newShop = {
+      id: newShopId,
+      name: values.shopName,
+      ownerId: newUserId,
+      address: values.address,
+      upiId: values.upiId,
+      phone: values.phone,
+      createdAt: new Date()
+    };
+    
+    const newShopkeeper: User = {
+      id: newUserId,
+      name: values.name,
+      role: "shopkeeper",
+      shopId: newShopId,
+      email: values.email,
+      phone: values.phone,
+      createdAt: new Date()
+    };
+    
+    // In a real app, this would store the data in the database
+    console.log("Creating new shop:", newShop);
+    console.log("Creating new shopkeeper:", newShopkeeper);
+    
+    // Store user in localStorage for session management
+    localStorage.setItem('user', JSON.stringify(newShopkeeper));
     
     toast.success("Shop registered successfully!");
     navigate("/dashboard");
@@ -245,6 +332,45 @@ const Login = () => {
                               <FormLabel>Email</FormLabel>
                               <FormControl>
                                 <Input type="email" placeholder="Enter your email" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={shopkeeperSignupForm.control}
+                          name="phone"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Phone (Optional)</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Enter your phone number" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={shopkeeperSignupForm.control}
+                          name="address"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Shop Address (Optional)</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Enter your shop address" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={shopkeeperSignupForm.control}
+                          name="upiId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>UPI ID (Optional)</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Enter your UPI ID" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
