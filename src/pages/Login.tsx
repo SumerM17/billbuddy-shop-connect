@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -282,7 +283,10 @@ const Login = () => {
                           <FormItem>
                             <FormLabel>Customer ID</FormLabel>
                             <FormControl>
-                              <Input placeholder="Enter your unique customer ID" {...field} />
+                              <Input 
+                                placeholder="Enter your unique customer ID" 
+                                {...field} 
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -321,7 +325,11 @@ const Login = () => {
                             <FormItem>
                               <FormLabel>Email</FormLabel>
                               <FormControl>
-                                <Input type="email" placeholder="Enter your email" {...field} />
+                                <Input 
+                                  type="email" 
+                                  placeholder="Enter your email" 
+                                  {...field} 
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -334,7 +342,11 @@ const Login = () => {
                             <FormItem>
                               <FormLabel>Password</FormLabel>
                               <FormControl>
-                                <Input type="password" placeholder="Enter your password" {...field} />
+                                <Input 
+                                  type="password" 
+                                  placeholder="Enter your password" 
+                                  {...field} 
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -377,7 +389,10 @@ const Login = () => {
                             <FormItem>
                               <FormLabel>Shop Name</FormLabel>
                               <FormControl>
-                                <Input placeholder="Enter your shop name" {...field} />
+                                <Input 
+                                  placeholder="Enter your shop name" 
+                                  {...field} 
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -390,7 +405,10 @@ const Login = () => {
                             <FormItem>
                               <FormLabel>Your Name</FormLabel>
                               <FormControl>
-                                <Input placeholder="Enter your name" {...field} />
+                                <Input 
+                                  placeholder="Enter your name" 
+                                  {...field} 
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -403,7 +421,11 @@ const Login = () => {
                             <FormItem>
                               <FormLabel>Email</FormLabel>
                               <FormControl>
-                                <Input type="email" placeholder="Enter your email" {...field} />
+                                <Input 
+                                  type="email" 
+                                  placeholder="Enter your email" 
+                                  {...field} 
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -416,7 +438,10 @@ const Login = () => {
                             <FormItem>
                               <FormLabel>Phone (Optional)</FormLabel>
                               <FormControl>
-                                <Input placeholder="Enter your phone number" {...field} />
+                                <Input 
+                                  placeholder="Enter your phone number" 
+                                  {...field} 
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -429,7 +454,10 @@ const Login = () => {
                             <FormItem>
                               <FormLabel>Shop Address (Optional)</FormLabel>
                               <FormControl>
-                                <Input placeholder="Enter your shop address" {...field} />
+                                <Input 
+                                  placeholder="Enter your shop address" 
+                                  {...field} 
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -442,7 +470,10 @@ const Login = () => {
                             <FormItem>
                               <FormLabel>UPI ID (Optional)</FormLabel>
                               <FormControl>
-                                <Input placeholder="Enter your UPI ID" {...field} />
+                                <Input 
+                                  placeholder="Enter your UPI ID" 
+                                  {...field} 
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -455,7 +486,11 @@ const Login = () => {
                             <FormItem>
                               <FormLabel>Password</FormLabel>
                               <FormControl>
-                                <Input type="password" placeholder="Create a password" {...field} />
+                                <Input 
+                                  type="password" 
+                                  placeholder="Create a password" 
+                                  {...field} 
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -468,7 +503,11 @@ const Login = () => {
                             <FormItem>
                               <FormLabel>Confirm Password</FormLabel>
                               <FormControl>
-                                <Input type="password" placeholder="Confirm your password" {...field} />
+                                <Input 
+                                  type="password" 
+                                  placeholder="Confirm your password" 
+                                  {...field} 
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
