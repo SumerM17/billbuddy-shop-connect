@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/form";
 import { toast } from "@/components/ui/sonner";
 import Navbar from "@/components/Navbar";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from 'uuid';
 
 const customerLoginSchema = z.object({
@@ -193,6 +193,7 @@ const Login = () => {
     setIsLoading(true);
     try {
       console.log("Shopkeeper signup attempt with email:", values.email);
+      console.log("Form values:", values);
       
       // Register shopkeeper with Supabase
       const { data, error } = await supabase.auth.signUp({
@@ -404,6 +405,8 @@ const Login = () => {
                                 <Input 
                                   placeholder="Enter your shop name" 
                                   {...field} 
+                                  onChange={(e) => field.onChange(e.target.value)}
+                                  value={field.value}
                                 />
                               </FormControl>
                               <FormMessage />
@@ -420,6 +423,8 @@ const Login = () => {
                                 <Input 
                                   placeholder="Enter your name" 
                                   {...field} 
+                                  onChange={(e) => field.onChange(e.target.value)}
+                                  value={field.value}
                                 />
                               </FormControl>
                               <FormMessage />
@@ -437,6 +442,8 @@ const Login = () => {
                                   type="email" 
                                   placeholder="Enter your email" 
                                   {...field} 
+                                  onChange={(e) => field.onChange(e.target.value)}
+                                  value={field.value}
                                 />
                               </FormControl>
                               <FormMessage />
@@ -453,6 +460,8 @@ const Login = () => {
                                 <Input 
                                   placeholder="Enter your phone number" 
                                   {...field} 
+                                  onChange={(e) => field.onChange(e.target.value)}
+                                  value={field.value}
                                 />
                               </FormControl>
                               <FormMessage />
@@ -469,6 +478,8 @@ const Login = () => {
                                 <Input 
                                   placeholder="Enter your shop address" 
                                   {...field} 
+                                  onChange={(e) => field.onChange(e.target.value)}
+                                  value={field.value}
                                 />
                               </FormControl>
                               <FormMessage />
@@ -485,6 +496,8 @@ const Login = () => {
                                 <Input 
                                   placeholder="Enter your UPI ID" 
                                   {...field} 
+                                  onChange={(e) => field.onChange(e.target.value)}
+                                  value={field.value}
                                 />
                               </FormControl>
                               <FormMessage />
@@ -502,6 +515,8 @@ const Login = () => {
                                   type="password" 
                                   placeholder="Create a password" 
                                   {...field} 
+                                  onChange={(e) => field.onChange(e.target.value)}
+                                  value={field.value}
                                 />
                               </FormControl>
                               <FormMessage />
@@ -519,6 +534,8 @@ const Login = () => {
                                   type="password" 
                                   placeholder="Confirm your password" 
                                   {...field} 
+                                  onChange={(e) => field.onChange(e.target.value)}
+                                  value={field.value}
                                 />
                               </FormControl>
                               <FormMessage />
