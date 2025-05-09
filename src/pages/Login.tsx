@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -82,6 +81,8 @@ const Login = () => {
   const onCustomerSubmit = async (values: z.infer<typeof customerLoginSchema>) => {
     setIsLoading(true);
     try {
+      console.log("Customer login attempt with ID:", values.uniqueId);
+      
       // Find customer in database by unique ID
       const { data: customer, error: customerError } = await supabase
         .from("customers")
@@ -91,6 +92,7 @@ const Login = () => {
       
       if (customerError || !customer) {
         toast.error("Invalid customer ID. Please check and try again.");
+        console.error("Customer lookup error:", customerError);
         setIsLoading(false);
         return;
       }
@@ -141,6 +143,8 @@ const Login = () => {
   const onShopkeeperLoginSubmit = async (values: z.infer<typeof shopkeeperLoginSchema>) => {
     setIsLoading(true);
     try {
+      console.log("Shopkeeper login attempt with email:", values.email);
+      
       // Authenticate shopkeeper with Supabase
       const { data, error } = await supabase.auth.signInWithPassword({
         email: values.email,
@@ -163,6 +167,7 @@ const Login = () => {
 
       if (profileError || !profile) {
         toast.error("Profile not found. Please contact support.");
+        console.error("Profile lookup error:", profileError);
         setIsLoading(false);
         return;
       }
@@ -187,6 +192,8 @@ const Login = () => {
   const onShopkeeperSignupSubmit = async (values: z.infer<typeof shopkeeperSignupSchema>) => {
     setIsLoading(true);
     try {
+      console.log("Shopkeeper signup attempt with email:", values.email);
+      
       // Register shopkeeper with Supabase
       const { data, error } = await supabase.auth.signUp({
         email: values.email,
@@ -205,6 +212,8 @@ const Login = () => {
         setIsLoading(false);
         return;
       }
+
+      console.log("User created in auth:", data.user.id);
 
       // Create a new shop
       const shopId = uuidv4();
@@ -225,6 +234,8 @@ const Login = () => {
         return;
       }
 
+      console.log("Shop created:", shopId);
+
       // Create a profile for the shopkeeper
       const { error: profileError } = await supabase.from("profiles").insert({
         id: data.user.id,
@@ -243,6 +254,7 @@ const Login = () => {
         return;
       }
 
+      console.log("Profile created for user:", data.user.id);
       toast.success("Shop registered successfully!");
       setIsLoading(false);
       navigate("/dashboard");
