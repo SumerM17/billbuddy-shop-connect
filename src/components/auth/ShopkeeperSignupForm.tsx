@@ -83,8 +83,23 @@ const ShopkeeperSignupForm = ({ onSwitchToLogin }: ShopkeeperSignupFormProps) =>
 
       console.log("User created in auth:", data.user.id);
 
-      // Create a new shop
+      // Create a new shop - register directly as admin to bypass RLS
       const shopId = uuidv4();
+      
+      // First, sign in with the newly created account to get session
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: values.email,
+        password: values.password,
+      });
+      
+      if (signInError) {
+        console.error("Sign in after signup error:", signInError);
+        toast.error("Failed to authenticate after registration. Please try logging in.");
+        setIsLoading(false);
+        return;
+      }
+      
+      // Now create the shop with authenticated user
       const { error: shopError } = await supabase.from("shops").insert({
         id: shopId,
         name: values.shopName,
@@ -97,7 +112,7 @@ const ShopkeeperSignupForm = ({ onSwitchToLogin }: ShopkeeperSignupFormProps) =>
 
       if (shopError) {
         console.error("Shop creation error:", shopError);
-        toast.error("Failed to create shop. Please try again.");
+        toast.error("Failed to create shop: " + shopError.message);
         setIsLoading(false);
         return;
       }
@@ -117,7 +132,7 @@ const ShopkeeperSignupForm = ({ onSwitchToLogin }: ShopkeeperSignupFormProps) =>
 
       if (profileError) {
         console.error("Profile creation error:", profileError);
-        toast.error("Failed to create profile. Please try again.");
+        toast.error("Failed to create profile: " + profileError.message);
         setIsLoading(false);
         return;
       }
@@ -154,8 +169,6 @@ const ShopkeeperSignupForm = ({ onSwitchToLogin }: ShopkeeperSignupFormProps) =>
                     <Input 
                       placeholder="Enter your shop name" 
                       {...field} 
-                      onChange={(e) => field.onChange(e.target.value)}
-                      value={field.value}
                     />
                   </FormControl>
                   <FormMessage />
@@ -172,8 +185,6 @@ const ShopkeeperSignupForm = ({ onSwitchToLogin }: ShopkeeperSignupFormProps) =>
                     <Input 
                       placeholder="Enter your name" 
                       {...field} 
-                      onChange={(e) => field.onChange(e.target.value)}
-                      value={field.value}
                     />
                   </FormControl>
                   <FormMessage />
@@ -191,8 +202,6 @@ const ShopkeeperSignupForm = ({ onSwitchToLogin }: ShopkeeperSignupFormProps) =>
                       type="email" 
                       placeholder="Enter your email" 
                       {...field} 
-                      onChange={(e) => field.onChange(e.target.value)}
-                      value={field.value}
                     />
                   </FormControl>
                   <FormMessage />
@@ -209,8 +218,6 @@ const ShopkeeperSignupForm = ({ onSwitchToLogin }: ShopkeeperSignupFormProps) =>
                     <Input 
                       placeholder="Enter your phone number" 
                       {...field} 
-                      onChange={(e) => field.onChange(e.target.value)}
-                      value={field.value}
                     />
                   </FormControl>
                   <FormMessage />
@@ -227,8 +234,6 @@ const ShopkeeperSignupForm = ({ onSwitchToLogin }: ShopkeeperSignupFormProps) =>
                     <Input 
                       placeholder="Enter your shop address" 
                       {...field} 
-                      onChange={(e) => field.onChange(e.target.value)}
-                      value={field.value}
                     />
                   </FormControl>
                   <FormMessage />
@@ -245,8 +250,6 @@ const ShopkeeperSignupForm = ({ onSwitchToLogin }: ShopkeeperSignupFormProps) =>
                     <Input 
                       placeholder="Enter your UPI ID" 
                       {...field} 
-                      onChange={(e) => field.onChange(e.target.value)}
-                      value={field.value}
                     />
                   </FormControl>
                   <FormMessage />
@@ -264,8 +267,6 @@ const ShopkeeperSignupForm = ({ onSwitchToLogin }: ShopkeeperSignupFormProps) =>
                       type="password" 
                       placeholder="Create a password" 
                       {...field} 
-                      onChange={(e) => field.onChange(e.target.value)}
-                      value={field.value}
                     />
                   </FormControl>
                   <FormMessage />
@@ -283,8 +284,6 @@ const ShopkeeperSignupForm = ({ onSwitchToLogin }: ShopkeeperSignupFormProps) =>
                       type="password" 
                       placeholder="Confirm your password" 
                       {...field} 
-                      onChange={(e) => field.onChange(e.target.value)}
-                      value={field.value}
                     />
                   </FormControl>
                   <FormMessage />
