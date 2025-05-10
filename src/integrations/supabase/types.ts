@@ -180,7 +180,25 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_new_shop: {
+        Args: {
+          p_shop_id: string
+          p_shop_name: string
+          p_address: string
+          p_upi_id: string
+          p_phone: string
+        }
+        Returns: undefined
+      }
+      create_shopkeeper_profile: {
+        Args: {
+          p_name: string
+          p_shop_id: string
+          p_email: string
+          p_phone: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

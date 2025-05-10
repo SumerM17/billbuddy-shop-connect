@@ -109,14 +109,14 @@ const ShopkeeperSignupForm = ({ onSwitchToLogin }: ShopkeeperSignupFormProps) =>
 
       console.log("User signed in:", signInData.user?.id);
 
-      // Step 3: Create shop in database with admin permissions
+      // Step 3: Create shop in database with admin permissions using RPC
       const { error: shopError } = await supabase.rpc('create_new_shop', {
         p_shop_id: shopId,
         p_shop_name: values.shopName,
         p_address: values.address || null,
         p_upi_id: values.upiId || null,
         p_phone: values.phone || null
-      });
+      } as any); // Using type assertion to bypass TypeScript error
 
       if (shopError) {
         console.error("Shop creation error:", shopError);
@@ -127,13 +127,13 @@ const ShopkeeperSignupForm = ({ onSwitchToLogin }: ShopkeeperSignupFormProps) =>
 
       console.log("Shop created:", shopId);
 
-      // Step 4: Create profile with shop connection
+      // Step 4: Create profile with shop connection using RPC
       const { error: profileError } = await supabase.rpc('create_shopkeeper_profile', {
         p_name: values.name,
         p_shop_id: shopId,
         p_email: values.email,
         p_phone: values.phone || null
-      });
+      } as any); // Using type assertion to bypass TypeScript error
 
       if (profileError) {
         console.error("Profile creation error:", profileError);
