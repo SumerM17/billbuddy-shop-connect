@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -62,32 +63,39 @@ const ShopkeeperSignupForm = ({ onSwitchToLogin }: ShopkeeperSignupFormProps) =>
       console.log("Shopkeeper signup attempt with email:", values.email);
       console.log("Form values:", values);
       
-      // Register shopkeeper with Supabase
-      const { data, error } = await supabase.auth.signUp({
+      // Generate a shop ID upfront
+      const shopId = uuidv4();
+
+      // Step 1: Register user with Supabase
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: values.email,
         password: values.password,
+        options: {
+          data: {
+            name: values.name,
+            shopkeeper: true,
+            shop_id: shopId
+          }
+        }
       });
 
-      if (error) {
-        toast.error("Registration failed: " + error.message);
-        console.error("Signup error:", error);
+      if (authError) {
+        toast.error("Registration failed: " + authError.message);
+        console.error("Signup error:", authError);
         setIsLoading(false);
         return;
       }
 
-      if (!data.user) {
+      if (!authData.user) {
         toast.error("Registration failed. Please try again.");
         setIsLoading(false);
         return;
       }
 
-      console.log("User created in auth:", data.user.id);
+      console.log("User created in auth:", authData.user.id);
 
-      // Create a new shop - register directly as admin to bypass RLS
-      const shopId = uuidv4();
-      
-      // First, sign in with the newly created account to get session
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      // Step 2: Sign in immediately after registration to establish session
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email: values.email,
         password: values.password,
       });
@@ -98,16 +106,16 @@ const ShopkeeperSignupForm = ({ onSwitchToLogin }: ShopkeeperSignupFormProps) =>
         setIsLoading(false);
         return;
       }
-      
-      // Now create the shop with authenticated user
-      const { error: shopError } = await supabase.from("shops").insert({
-        id: shopId,
-        name: values.shopName,
-        owner_id: data.user.id,
-        address: values.address || null,
-        upi_id: values.upiId || null,
-        phone: values.phone || null,
-        created_at: new Date().toISOString(),
+
+      console.log("User signed in:", signInData.user?.id);
+
+      // Step 3: Create shop in database with admin permissions
+      const { error: shopError } = await supabase.rpc('create_new_shop', {
+        p_shop_id: shopId,
+        p_shop_name: values.shopName,
+        p_address: values.address || null,
+        p_upi_id: values.upiId || null,
+        p_phone: values.phone || null
       });
 
       if (shopError) {
@@ -119,15 +127,12 @@ const ShopkeeperSignupForm = ({ onSwitchToLogin }: ShopkeeperSignupFormProps) =>
 
       console.log("Shop created:", shopId);
 
-      // Create a profile for the shopkeeper
-      const { error: profileError } = await supabase.from("profiles").insert({
-        id: data.user.id,
-        name: values.name,
-        role: "shopkeeper",
-        shop_id: shopId,
-        email: values.email,
-        phone: values.phone || null,
-        created_at: new Date().toISOString(),
+      // Step 4: Create profile with shop connection
+      const { error: profileError } = await supabase.rpc('create_shopkeeper_profile', {
+        p_name: values.name,
+        p_shop_id: shopId,
+        p_email: values.email,
+        p_phone: values.phone || null
       });
 
       if (profileError) {
@@ -137,7 +142,7 @@ const ShopkeeperSignupForm = ({ onSwitchToLogin }: ShopkeeperSignupFormProps) =>
         return;
       }
 
-      console.log("Profile created for user:", data.user.id);
+      console.log("Profile created for user:", authData.user.id);
       toast.success("Shop registered successfully!");
       setIsLoading(false);
       navigate("/dashboard");
